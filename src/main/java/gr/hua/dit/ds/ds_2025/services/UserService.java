@@ -32,10 +32,13 @@ public class UserService implements UserDetailsService {
 
     private BCryptPasswordEncoder passwordEncoder; // Ένα αντικείμενο τύπου BCryptPasswordEncoder για την κρυπτογράφηση του password
 
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, BCryptPasswordEncoder passwordEncoder) { // Constructor της κλάσης
+    private EmailService emailService; // Υπηρεσία αποστολής email
+
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, BCryptPasswordEncoder passwordEncoder, EmailService emailService) { // Constructor της κλάσης
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -51,6 +54,14 @@ public class UserService implements UserDetailsService {
         user.setRoles(roles);
 
         user = userRepository.save(user);
+
+        // Στείλε email επιτυχούς εγγραφής (best-effort)
+        try {
+            emailService.sendRegistrationSuccessEmail(user);
+        } catch (Exception e) {
+            System.out.println("Registration email failed (ignored): " + e.getMessage());
+        }
+
         return user.getId();
     }
 
